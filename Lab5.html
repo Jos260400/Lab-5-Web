@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat</title>
+<style>
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #e9eff1; 
+    margin: 0;
+    transition: background-color 0.5s ease;
+}
+#chatContainer{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: auto;
+}
+#chat{
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #ffffff; 
+  border-bottom: 1px solid #ddd;
+}
+body.dark-mode #chat{
+  background-color: #2c3e50; 
+}
+.message{
+    background-color: #f9f9f9;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-left: 5px solid #007bff;
+}
+  body.dark-mode .message{
+  background-color: #252525; 
+  color: #e0e0e0; 
+  border-left: 5px solid #4a90e2; 
+}
+body.dark-mode .message{
+  background-color: #252525; 
+  color: #e0e0e0; 
+  border-left: 5px solid #4a90e2; 
+}
+#emojiPicker{
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+body.dark-mode .message{
+  background-color: #252525; 
+  color: #e0e0e0; 
+  border-left: 5px solid #4a90e2; 
+}
+body.dark-mode{
+    background-color: #2c3e50;
+    color: #ecf0f1;
+}
+.message a.preview-link{
+    color: #007bff;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+}
+.message a.preview-link:hover{
+    text-decoration: underline;
+}
+
+</style>
+</head>
+<body>
+<div id="chatContainer">
+  <div id="chat"></div>
+  <div id="inputContainer">
+    <input id="nameInput" type="text" placeholder="Tu nombre">
+    <input id="messageInput" type="text" placeholder="Escribe tu mensaje aquí... (máximo 140 caracteres)">
+    <button id="emojiButton">😀</button>
+    <button id="sendButton">Enviar</button>
+  </div>
+  <div id="emojiPicker">
+    <span class="emoji">😀</span>
+    <span class="emoji">😂</span>
+    <span class="emoji">👍</span>
+    <span class="emoji">😍</span>
+    <span class="emoji">😭</span>
+    <span class="emoji">😎</span>
+    <span class="emoji">😡</span>
+  </div>
+  <button id="toggleDarkModeButton">Tema Oscuro</button>
+</div>
+
+<script>
+(async function() {
+  const chat = document.getElementById('chat');
+  const messageInput = document.getElementById('messageInput');
+  const nameInput = document.getElementById('nameInput');
+  const sendButton = document.getElementById('sendButton');
+  const emojiButton = document.getElementById('emojiButton');
+  const emojiPicker = document.getElementById('emojiPicker');
+  const toggleDarkModeButton = document.getElementById('toggleDarkModeButton');
+
+  async function loadMessages() {
+    try {
+      const response = await fetch('url-to-your-api');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const messages = await response.json();
+      messages.forEach(message => {
+        addMessage(message.sender, message.content); 
+      });
+    } catch (e) {
+      console.error("Failed to load messages:", e);
+    }
+  }
+
+  let darkMode = localStorage.getItem('darkMode') === 'true';
+  applyTheme();
+
+  function applyTheme() {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+      toggleDarkModeButton.textContent = 'Tema Claro';
+    } else {
+      document.body.classList.remove('dark-mode');
+      toggleDarkModeButton.textContent = 'Tema Oscuro';
+    }
+  }
+
+  function toggleDarkMode() {
+    darkMode = !darkMode;
+    localStorage.setItem('darkMode', darkMode.toString());
+    applyTheme();
+  }
+
+  toggleDarkModeButton.addEventListener('click', toggleDarkMode);
+
+  function addMessage(sender, text) {
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'message';
+
+    const senderSpan = document.createElement('span');
+    senderSpan.textContent = sender + ': ';
+    messageContainer.appendChild(senderSpan);
+
+    const messageSpan = document.createElement('span');
+    messageSpan.innerHTML = processMessage(text); 
+    messageContainer.appendChild(messageSpan);
+
+    chat.appendChild(messageContainer);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function processMessage(text) {
+    return text.replace(/(https?:\/\/[^\s]+)/g, (match) => {
+      return `<a href="${match}" target="_blank" class="preview-link">${match}</a>`;
+    });
+  }
+
+  chat.addEventListener('mouseover', function(event) {
+    if (event.target.classList.contains('preview-link')) {
+      const url = event.target.getAttribute('href');
+      const previewObject = document.createElement('object');
+      previewObject.data = url;
+      previewObject.width = "400";
+      previewObject.height = "300";
+      previewObject.type = "text/html";
+      previewObject.style.position = "absolute";
+      previewObject.style.bottom = "20px";
+      previewObject.style.left = "0";
+      previewObject.style.border = "1px solid #ccc";
+      previewObject.style.borderRadius = "5px";
+      previewObject.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+      previewObject.style.zIndex = "100";
+      event.target.appendChild(previewObject);
+    }
+  });
+
+  chat.addEventListener('mouseout', function(event) {
+    if (event.target.classList.contains('preview-link')) {
+      const previewObject = event.target.querySelector('object');
+      if (previewObject) {
+        event.target.removeChild(previewObject);
+      }
+    }
+  });
+
+  sendButton.addEventListener('click', function() {
+    const message = messageInput.value.trim();
+    if (message !== '' && nameInput.value.trim() !== '') {
+      addMessage(nameInput.value, message);
+      messageInput.value = ''; 
+    }
+  });
+
+  messageInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (message !== '' && nameInput.value.trim() !== '') {
+        addMessage(nameInput.value, message);
+        messageInput.value = ''; 
+      }
+    }
+  });
+
+  emojiButton.addEventListener('click', function() {
+    emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+  });
+
+  emojiPicker.addEventListener('click', function(event) {
+    if (event.target.classList.contains('emoji')) {
+      const emoji = event.target.textContent;
+      messageInput.value += emoji;
+      messageInput.focus();
+    }
+  });
+
+  setInterval(() => {
+    addMessage('José', 'Hola, ¿cómo estás?');
+  }, 5000);
+})();
+</script>
+</body>
+</html>
